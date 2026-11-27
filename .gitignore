@@ -1,0 +1,19 @@
+node_modules
+dist
+test-results
+playwright-report
+__pycache__
+
+# Local files and deployment credentials
+.DS_Store
+.vercel
+.codegraph
+.env
+.env.*
+*.pem
+*.key
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/

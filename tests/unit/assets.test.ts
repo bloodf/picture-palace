@@ -1,0 +1,35 @@
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { EQUIPMENT, ITEMS, PROJ_TIERS, SEAT_TIERS, SITES } from '../../src/sim/data/catalog';
+import { GENRES } from '../../src/sim/data/films';
+import { ANIM } from '../../src/sim/anims';
+import { ROOMS } from '../../src/sim/plan';
+import { CLIPS, CLIP_START, NB, TOTAL_FRAMES, bakeClips, solve } from '../../src/render/poses';
+import { TEXTURES } from '../../src/render/assets';
+import { PROP_MATS } from '../../src/render/materials';
+import { THEMES, shellMat } from '../../src/render/shell';
+import { freshSite } from '../../src/sim/state';
+import { Rng } from '../../src/sim/rng';
+const A = 'public/assets/';
+const json = (p: string) => JSON.parse(readFileSync(A + p, 'utf8'));
+describe('assets on disk', () => {
+  const props = json('props/props.json'), lo = json('props/props_lo.json'), chars = json('chars/chars.json'), shell = json('shell/shell.json');
+  it('every catalogue object has a full and a light model', () => { for (const p of [...ITEMS.map((i) => i.prop), ...EQUIPMENT.map((e) => e.prop).filter(Boolean), ...SEAT_TIERS.map((s) => s.prop), ...PROJ_TIERS.map((s) => s.prop)]) { expect(props[p], p).toBeTruthy(); expect(lo[p], p).toBeTruthy(); } });
+  it('light models are much lighter', () => { const t = (m: Record<string, { tris: number }>) => Object.values(m).reduce((a, p) => a + p.tris, 0); expect(t(lo)).toBeLessThan(t(props) * 0.4); });
+  it('placeable models roughly fit their footprints', () => { for (const i of ITEMS) { const m = props[i.prop]; expect(m.max[0] - m.min[0], i.id).toBeLessThan(i.w + 0.95); expect(m.max[1], i.id).toBeLessThan(i.h + 0.6); expect(m.min[1], i.id).toBeGreaterThan(-0.12); } });
+  it('every prop material is defined', () => { for (const set of [props, lo]) for (const [k, p] of Object.entries(set) as [string, { prims: { mat: string }[] }][]) for (const q of p.prims) expect(q.mat.startsWith('screen_') || PROP_MATS[q.mat], `${k}: ${q.mat}`).toBeTruthy(); });
+  it('every shell material is defined, for every theme', () => { const site = freshSite('palace', new Rng(1)); for (const r of shell.rooms) for (const p of [...r.prims, ...r.trim]) expect(shellMat(p.mat, site).color, p.mat).not.toBe(0xff00ff); for (const s of SITES) expect(THEMES[s.theme], s.theme).toBeTruthy(); });
+  it('every room is modelled and has a baked light map', () => { for (const r of ROOMS) { expect(shell.rooms.some((x: { id: string }) => x.id === r.id), r.id).toBe(true); expect(existsSync(`${A}shell/lm_${r.id}.webp`), r.id).toBe(true); } expect(existsSync(A + 'shell/probe.png')).toBe(true); });
+  it('all texture sets exist', () => { const site = freshSite('palace', new Rng(1)); const names = new Set<string>(); for (let l = 0; l < 3; l++) { Object.assign(site.decor, { lobby: l, prom: l, wc: l, facade: l }); for (const r of shell.rooms) for (const p of [...r.prims, ...r.trim]) { const t = shellMat(p.mat, site).tex; if (t) names.add(t); } } for (const m of Object.values(PROP_MATS)) if (m.tex) names.add(m.tex); for (const t of names) expect(TEXTURES, `${t} is preloaded`).toContain(t); for (const t of names) for (const k of ['c', 'n', 'r']) { if (t === 'floor_terrazzo' && k === 'n') continue; expect(existsSync(`${A}tex/${t}_${k}.webp`), `${t}_${k}`).toBe(true); } });
+  it('has film footage for every genre', () => { for (const g of Object.values(GENRES)) for (const a of g.arts) { expect(existsSync(`${A}films/${a}.webp`), a).toBe(true); expect(statSync(`${A}films/${a}.webp`).size).toBeGreaterThan(3000); } });
+  it('has twenty people with four levels of detail, textures and skin weights', () => { expect(chars.chars).toHaveLength(20); for (const c of chars.chars) { expect(c.lods).toHaveLength(4); expect(c.height).toBeGreaterThan(1.2); expect(c.height).toBeLessThan(2); expect(existsSync(`${A}chars/${c.id}.webp`)).toBe(true); expect(existsSync(`${A}chars/${c.id}_m.webp`)).toBe(true); const b = readFileSync(`${A}chars/${c.id}.bin`); for (const l of c.lods) { expect(l.ni % 3).toBe(0); const idx = new Uint16Array(b.buffer.slice(b.byteOffset + l.off.i, b.byteOffset + l.off.i + l.ni * 2)); expect(Math.max(...idx)).toBeLessThan(l.nv); for (let v = 0; v < l.nv; v += 17) { let s = 0; for (let k = 0; k < 4; k++) s += b[l.off.bw + v * 4 + k]!; expect(Math.abs(s - 255)).toBeLessThan(4); } } } });
+});
+describe('animation', () => {
+  const chars = json('chars/chars.json');
+  it('has a clip for every animation id', () => { for (const [n, i] of Object.entries(ANIM)) { expect(CLIPS[i], n).toBeTruthy(); expect(CLIPS[i]!.name.toLowerCase(), n).toBe(n.toLowerCase()); } });
+  it('packs clips without overlap', () => { for (let i = 1; i < CLIPS.length; i++) expect(CLIP_START[i]).toBe(CLIP_START[i - 1]! + CLIPS[i - 1]!.frames); expect(TOTAL_FRAMES).toBe(CLIP_START.at(-1)! + CLIPS.at(-1)!.frames); });
+  it('bakes finite matrices for every body', () => { for (const c of [chars.chars[0], chars.chars[12], chars.chars[10]]) { const m = bakeClips(c, chars.parent); expect(m.length).toBe(TOTAL_FRAMES * NB * 12); expect(m.every(Number.isFinite)).toBe(true); } });
+  it('keeps feet on the floor while standing and walking', () => { for (const c of chars.chars) for (const i of [ANIM.idle, ANIM.walk, ANIM.talk]) for (let f = 0; f < 8; f++) { const { R, P } = solve(CLIPS[i]!.fn(f / 8), c, chars.parent); let low = 9; for (const [b, t] of [[18, 19], [22, 23]] as const) for (const q of [[c.joints[b][0], 0, c.joints[b][2] - 0.05], [c.joints[t][0], 0, c.joints[t][2]]]) { const d = q.map((v, k) => v - c.joints[b][k]) as [number, number, number], r = R[b]!; low = Math.min(low, P[b]![1] + r[1]! * d[0] + r[4]! * d[1] + r[7]! * d[2]); } expect(Math.abs(low), `${c.id} ${CLIPS[i]!.name}`).toBeLessThan(0.05); } });
+  it('sits people at seat height', () => { for (const c of chars.chars) { const { P } = solve(CLIPS[ANIM.sit]!.fn(0.2), c, chars.parent); expect(P[0]![1]).toBeCloseTo(0.53, 2); expect(P[5]![1]).toBeGreaterThan(0.8); } });
+  it('keeps limbs the right length', () => { const c = chars.chars[0]; const len = (a: number[], b: number[]) => Math.hypot(a[0]! - b[0]!, a[1]! - b[1]!, a[2]! - b[2]!); for (const clip of CLIPS) for (let f = 0; f < 6; f++) { const { P } = solve(clip.fn(f / 6), c, chars.parent); for (const [a, b] of [[7, 8], [8, 9], [16, 17], [17, 18], [4, 5]] as const) expect(len(P[a]!, P[b]!)).toBeCloseTo(len(c.joints[a], c.joints[b]), 5); } });
+});

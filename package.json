@@ -1,0 +1,46 @@
+{
+  "name": "picture-palace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Picture Palace - a 3D movie theater empire simulator",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "start": "vite build && vite preview --port 4173 --strictPort --open",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:e2e": "node scripts/ensure-browser.mjs && playwright test",
+    "test:all": "npm run typecheck && npm run test:unit && npm run test:e2e",
+    "backup": "node scripts/backup.mjs",
+    "assets": "bash tools/build-assets.sh"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/courier-prime": "^5.3.0",
+    "@fontsource/league-gothic": "^5.3.0",
+    "@fontsource/yellowtail": "^5.3.0",
+    "n8ao": "^2.1.0",
+    "postprocessing": "^6.39.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "fflate": "^0.8.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

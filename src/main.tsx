@@ -1,0 +1,14 @@
+import '@fontsource/league-gothic/400.css';
+import '@fontsource/yellowtail/400.css';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/700.css';
+import '@fontsource/barlow-condensed/500.css';
+import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/barlow-condensed/700.css';
+import '@fontsource/courier-prime/400.css';
+import '@fontsource/courier-prime/700.css';
+import './ui/style.css';
+import { createRoot } from 'react-dom/client';
+import { App } from './ui/app';
+createRoot(document.getElementById('root')!).render(<App />);

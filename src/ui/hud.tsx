@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { act, session, ui, useGame, useUi, type PanelId } from './store';
 import { $, Btn, Bulbs, Emo, Letters, Meter, Stars, moodName } from './bits';
 import { Icon } from './icons';
@@ -48,6 +48,30 @@ export function Dock(): JSX.Element {
   const g = useGame(), { panel } = useUi();
   const alert: Partial<Record<PanelId, number>> = { upkeep: g.s.site.jobs.filter((j) => j.severity >= 3).length, programme: g.site.auds.filter((a) => a.built && !a.program.length).length, films: g.s.contracts.filter((c) => c.endDay >= g.s.day).length ? 0 : 1, staff: g.site.staff.filter((x) => x.morale < 25).length };
   return <nav className="dock" aria-label="Departments">{DOCK.map(([id, t, k]) => <button key={id} className={panel === id ? 'on' : ''} data-testid={`dock-${id}`} title={k ? `${t} (${k})` : t} onClick={() => openPanel(id)}><Icon n={id} s={25} /><span>{t}</span>{!!alert[id] && <b className="badge">{alert[id]}</b>}</button>)}</nav>;
+}
+
+export function MobileControls(): JSX.Element | null {
+  const { mode, panel, menu, minigame } = useUi();
+  const held = useRef(new Map<number, readonly [number, number]>());
+  const update = () => {
+    let forward = 0, right = 0;
+    for (const [f, r] of held.current.values()) { forward += f; right += r; }
+    session.engine?.walkInput(forward, right);
+  };
+  useEffect(() => {
+    const reset = () => { held.current.clear(); session.engine?.walkInput(0, 0); session.engine?.pressUse(false); };
+    addEventListener('blur', reset);
+    document.addEventListener('visibilitychange', reset);
+    reset();
+    return () => { reset(); removeEventListener('blur', reset); document.removeEventListener('visibilitychange', reset); };
+  }, [mode, panel, menu, minigame]);
+  if (panel || menu || minigame) return null;
+  if (mode === 'manager') return <div className="mobile-camera" role="group" aria-label="Camera zoom"><button aria-label="Zoom in" onClick={() => session.engine?.rig.zoom(.8)}>+</button><button aria-label="Zoom out" onClick={() => session.engine?.rig.zoom(1.25)}>−</button></div>;
+  const directions: readonly [string, string, number, number][] = [['forward', '↑', 1, 0], ['left', '←', 0, -1], ['backward', '↓', -1, 0], ['right', '→', 0, 1]];
+  return <div className="mobile-walk" role="group" aria-label="Walking controls">
+    <div className="mobile-dpad">{directions.map(([label, icon, f, r]) => <button key={label} className={label} aria-label={`Move ${label}`} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); held.current.set(e.pointerId, [f, r]); update(); }} onPointerUp={(e) => { held.current.delete(e.pointerId); update(); }} onPointerCancel={(e) => { held.current.delete(e.pointerId); update(); }} onLostPointerCapture={(e) => { held.current.delete(e.pointerId); update(); }}>{icon}</button>)}</div>
+    <button className="mobile-use" aria-label="Interact or hold to work" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); session.engine?.pressUse(true); }} onPointerUp={() => session.engine?.pressUse(false)} onPointerCancel={() => session.engine?.pressUse(false)} onLostPointerCapture={() => session.engine?.pressUse(false)}>Use</button>
+  </div>;
 }
 export function CallSheet(): JSX.Element | null {
   const g = useGame(), { objectivesOpen } = useUi(), ch = CHAPTERS[g.s.chapter - 1]!, list = currentObjectives(g);

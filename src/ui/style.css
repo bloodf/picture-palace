@@ -148,3 +148,41 @@ input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; h
 @media (max-width: 1180px) { .dock button { width: 68px; font-size: 13px; } .ticket.rating em { display: none; } .mqin .name em { display: none; } .mqin { grid-template-columns: 1fr 1.2fr 1fr; } .letters { letter-spacing: .02em; } .top .letters { font-size: 27px !important; } .transport .wide span { display: none; } .cols.l { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .dock { overflow-x: auto; } .dock button { width: 58px; flex: none; } .exchange, .cols, .booked, .studios, .fcols, .recipe, .pfoot { grid-template-columns: 1fr; height: auto; } .callsheet { display: none; } .citymap, .deed { float: none; width: 100%; } .diffs { grid-template-columns: 1fr; } .mqin .name { display: none; } .mqin { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: no-preference) { .panel, .extra, .front, .telegram, .card { animation: rise .16s ease-out; } @keyframes rise { from { opacity: 0; translate: 0 10px; } } .celebrate { animation: rise .25s ease-out; } }
+
+.mobile-camera, .mobile-walk { display: none; }
+@media (max-width: 700px), (pointer: coarse) {
+  .mobile-camera { position: absolute; right: 12px; bottom: 90px; display: flex; gap: 6px; }
+  .mobile-walk { position: absolute; left: 12px; right: 12px; bottom: 86px; display: flex; justify-content: space-between; align-items: end; pointer-events: none; }
+  .mobile-camera button, .mobile-walk button { width: 48px; height: 48px; border: 2px solid var(--brass); border-radius: 8px; background: var(--lamp); color: var(--ink); font: 700 24px var(--cond); touch-action: none; pointer-events: auto; }
+  .mobile-dpad { display: grid; grid-template-columns: repeat(3, 48px); gap: 4px; }
+  .mobile-dpad .forward { grid-column: 2; }
+  .mobile-dpad .left { grid-column: 1; }
+  .mobile-dpad .backward { grid-column: 2; }
+  .mobile-dpad .right { grid-column: 3; }
+  .keys { display: none; }
+}
+@media (max-width: 700px) {
+  .app { inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .top { inset: 6px 8px auto; flex-wrap: wrap; gap: 6px; }
+  .mq { flex-basis: 100%; min-width: 0; }
+  .transport { margin-left: auto; }
+  .transport button, .btn, .btn.small, .tabs button { min-height: 44px; }
+  .stubs { display: flex; }
+  .ticket { padding: 4px 8px; }
+  .panel { top: 144px; bottom: 80px; width: calc(100% - 12px); }
+  .panel .body { padding: 12px; }
+  .veil { padding: 10px; align-items: start; }
+  .extra, .front, .telegram { padding: 16px; min-width: 0; margin-block: auto; }
+  .ebody { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .extra h2, .front h2 { font-size: 40px; }
+  .stats { flex-wrap: wrap; gap: 12px; }
+  .title { padding: 24px 12px; }
+  .tmenu, .tmq, .tsheet { max-width: 100%; }
+  .tsheet { padding: 16px; }
+  .dock { bottom: 8px; }
+  .buildbar { max-width: calc(100% - 16px); flex-wrap: wrap; gap: 6px; }
+  .prompt { max-width: calc(100% - 16px); white-space: normal; bottom: 198px; }
+  .toasts { top: 144px; max-width: calc(100% - 16px); }
+  .wire, .incidents { max-width: calc(100% - 16px); }
+  input, select, textarea { font-size: max(16px, 1em); }
+}

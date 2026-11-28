@@ -1,7 +1,7 @@
 import { useEffect, useRef, type JSX } from 'react';
 import { Engine } from '../render/engine';
 import { session, ui, useUi } from './store';
-import { BuildBar, CallSheet, Dock, Incidents, Inspector, PromptBar, Toasts, TopBar, Wire, openPanel, setSpeed, toggleMode } from './hud';
+import { BuildBar, CallSheet, Dock, Incidents, Inspector, MobileControls, PromptBar, Toasts, TopBar, Wire, openPanel, setSpeed, toggleMode } from './hud';
 import { DayReport, EventModal, FocusGame, GameOver, PauseMenu } from './modals';
 import { Loading, Title } from './title';
 import { Coach } from './coach';
@@ -63,7 +63,7 @@ export function App(): JSX.Element {
       <canvas ref={cv} className="stage" data-testid="stage" />
       {phase === 'loading' && <Loading />}
       {phase === 'title' && <Title />}
-      {phase === 'play' && <><TopBar /><CallSheet /><Wire /><Incidents /><PromptBar /><Inspector />{P && <P />}<BuildBar /><Dock /><Coach /><EventModal /><DayReport /><GameOver /><FocusGame /><PauseMenu /></>}
+      {phase === 'play' && <><TopBar /><CallSheet /><Wire /><Incidents /><PromptBar /><Inspector />{P && <P />}<BuildBar /><Dock /><MobileControls /><Coach /><EventModal /><DayReport /><GameOver /><FocusGame /><PauseMenu /></>}
       <Toasts />
     </div>
   );
